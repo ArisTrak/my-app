@@ -1,0 +1,75 @@
+# harmonization_checker.py
+
+def interval(a, b):
+    return abs(a - b)
+
+def check_parallel_fifths_or_octaves(prog):
+    errors = []
+    for i in range(len(prog) - 1):
+        chord1 = prog[i]
+        chord2 = prog[i + 1]
+        for v1 in range(4):
+            for v2 in range(v1 + 1, 4):
+                int1 = interval(chord1[v1], chord1[v2])
+                int2 = interval(chord2[v1], chord2[v2])
+                if int1 == 7 and int2 == 7:
+                    errors.append((i, f"Παράλληλη 5η μεταξύ φωνών {v1}-{v2}"))
+                if int1 == 12 and int2 == 12:
+                    errors.append((i, f"Παράλληλη 8η μεταξύ φωνών {v1}-{v2}"))
+    return errors
+
+def check_voice_ranges(chord):
+    limits = {
+        1: (48, 67),  # Tenore
+        2: (53, 74),  # Alto
+        3: (60, 79)   # Soprano
+    }
+    errors = []
+    for voice in limits:
+        note = chord[voice]
+        low, high = limits[voice]
+        if note < low or note > high:
+            errors.append(f"Η φωνή {voice} εκτός φωνητικού εύρους: {note}")
+    return errors
+
+def check_voice_crossing(chord):
+    errors = []
+    if chord[3] < chord[2]:
+        errors.append("Η Soprano είναι κάτω από την Alto")
+    if chord[2] < chord[1]:
+        errors.append("Η Alto είναι κάτω από την Tenore")
+    return errors
+
+def analyze_progression(progression):
+    all_errors = []
+    for i, chord in enumerate(progression):
+        chord_errors = []
+        chord_errors += check_voice_ranges(chord)
+        chord_errors += check_voice_crossing(chord)
+        if chord_errors:
+            all_errors.append((i, chord_errors))
+
+    parallel_errors = check_parallel_fifths_or_octaves(progression)
+    all_errors += parallel_errors
+
+    return all_errors
+
+# -------------------------
+# Παράδειγμα χρήσης:
+
+if __name__ == "__main__":
+    progression = [
+        [48, 52, 55, 60],  # C
+        [50, 53, 57, 62],  # Dm
+        [52, 55, 59, 64],  # Em
+        [53, 57, 60, 65]   # F
+    ]
+
+    errors = analyze_progression(progression)
+
+    if errors:
+        print("Βρέθηκαν σφάλματα εναρμόνισης:")
+        for e in errors:
+            print(f"Μέτρο {e[0]+1}: {e[1]}")
+    else:
+        print("Η εναρμόνιση δεν έχει σφάλματα.")
